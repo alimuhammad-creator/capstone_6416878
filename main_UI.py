@@ -1,55 +1,41 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import joblib
 
-# Load trained model and scaler
-model = joblib.load("xgboost_model.pkl")
-scaler = joblib.load("scaler.pkl")
+st.set_page_config(page_title="Customer Retention Dashboard", page_icon="🔍", layout="wide")
 
-st.set_page_config(page_title="Customer Retention Dashboard", layout="wide")
-st.title("🎯 Smart Customer Retention Insights")
-st.markdown("""
-Upload a CSV file with customer attributes, and we'll highlight customers at high risk of leaving.
-Act fast and offer tailored deals to retain them! 🔁💼
-""")
+st.title("🔍 Customer Retention Dashboard")
+st.markdown("Upload customer data to identify individuals likely to churn and take action to retain them.")
 
-uploaded_file = st.file_uploader("📂 Upload Customer CSV", type=["csv"])
+# Upload CSV
+data = st.file_uploader("Upload Customer Data CSV", type="csv")
 
-if uploaded_file is not None:
-    try:
-        df = pd.read_csv(uploaded_file)
-        st.subheader("📄 Uploaded Data Preview")
-        st.dataframe(df.head())
+if data is not None:
+    df = pd.read_csv(data)
+    st.subheader("📄 Uploaded Customer Data")
+    st.dataframe(df.head())
 
-        # Match features to model
-        model_features = model.feature_names_in_
-        missing_features = [col for col in model_features if col not in df.columns]
+    # Dummy churn predictions (just for mockup)
+    np.random.seed(42)
+    df['Churn_Probability'] = np.round(np.random.rand(len(df)), 2)
+    df['Churn_Prediction'] = df['Churn_Probability'].apply(lambda x: 'Yes' if x > 0.5 else 'No')
 
-        if missing_features:
-            st.warning(f"Missing required features: {missing_features}")
-        else:
-            df_selected = df[model_features]
-            df_scaled = pd.DataFrame(scaler.transform(df_selected), columns=model_features)
-            
-            predictions = model.predict(df_scaled)
-            probabilities = model.predict_proba(df_scaled)[:, 1]
+    st.subheader("📊 Prediction Summary")
+    churned = df[df['Churn_Prediction'] == 'Yes']
+    retained = df[df['Churn_Prediction'] == 'No']
 
-            df_result = df.copy()
-            df_result['Churn Probability'] = probabilities
-            df_result['Churn Risk'] = np.where(predictions == 1, "🚨 At Risk", "✅ Retained")
+    col1, col2 = st.columns(2)
+    col1.metric("Customers Predicted to Leave", len(churned))
+    col2.metric("Likely to Stay", len(retained))
 
-            st.subheader("📊 Prediction Summary")
-            total = len(df_result)
-            risk_count = np.sum(predictions)
-            st.success(f"Out of {total} customers, **{risk_count}** are at risk of churning. Time to act!")
+    st.subheader("🚨 Customers at Risk")
+    st.dataframe(churned[['Customer_Age', 'Gender', 'Credit_Limit', 'Churn_Probability']])
 
-            st.subheader("🔍 Customers at Risk - Offer Special Deals")
-            at_risk_customers = df_result[df_result['Churn Risk'] == "🚨 At Risk"]
-            st.dataframe(at_risk_customers.reset_index(drop=True))
+    st.markdown("---")
+    st.success("These customers are predicted to churn. Consider targeting them with retention offers like discounts, loyalty rewards, or personalized messages.")
+else:
+    st.info("Please upload a CSV file to begin analysis.")
 
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
 
 
 
