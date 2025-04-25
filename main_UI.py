@@ -4,7 +4,7 @@ import numpy as np
 
 st.set_page_config(page_title="Customer Retention Dashboard", page_icon="🔍", layout="wide")
 
-st.title("🔍 Customer Retention Dashboard")
+st.title("🔍LoyaltyLens - Customer Retention Dashboard")
 st.markdown("Upload customer data to identify individuals likely to churn and take action to retain them.")
 
 # Upload CSV
